@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NextStep AI • Context-Aware Study & Coding Recommender</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at top left, #0f172a, #090d16 60%);
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .glass {
+      background: rgba(30, 41, 59, 0.55);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+    .card-hover { transition: all 0.22s ease; }
+    .card-hover:hover {
+      transform: translateY(-3px);
+      border-color: rgba(99, 102, 241, 0.55);
+      box-shadow: 0 12px 30px -10px rgba(79, 70, 229, 0.35);
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Top Navbar -->
+  <header class="border-b border-slate-800/80 bg-slate-950/60 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950 text-lg shadow-lg shadow-indigo-500/30">
+          AI
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white">NextStep <span class="text-indigo-400">Context Recommender</span></h1>
+          <p class="text-xs text-slate-400">Hybrid SVD + TF-IDF • Pomodoro Tracking • Cold-Start Onboarding</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2.5">
+        <button onclick="openOnboardingModal()" class="px-3.5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 transition">
+          + New Learner
+        </button>
+        <label class="cursor-pointer px-3.5 py-2 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition">
+          ⬆ Import CSV
+          <input type="file" id="csvInput" accept=".csv" class="hidden" onchange="uploadCSV(event)" />
+        </label>
+        <button onclick="resetDemo()" class="px-3.5 py-2 rounded-lg text-xs font-medium bg-slate-900 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 border border-slate-800 transition">
+          Reset
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+    <!-- Left Sidebar -->
+    <aside class="lg:col-span-4 space-y-6">
+
+      <!-- Study Session Context -->
+      <section class="glass rounded-2xl p-6 space-y-5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-indigo-400">Study Session Context</h2>
+          <span class="text-xs mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">LIVE</span>
+        </div>
+
+        <!-- Learner Selector -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-medium text-slate-400">Active Learner Profile</label>
+            <button onclick="openOnboardingModal()" class="text-[11px] text-indigo-400 hover:underline">+ Register</button>
+          </div>
+          <select id="userId" onchange="fetchRecommendations()" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"></select>
+        </div>
+
+        <!-- Curated Study Roadmaps -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1.5">Curated Study Roadmap</label>
+          <select id="roadmapSelect" onchange="fetchRecommendations()" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-cyan-300 focus:outline-none focus:border-cyan-500">
+            <option value="All">All Tracks (Hybrid Discovery)</option>
+            <option value="SDE Blind 75">SDE Blind 75 / DSA Track</option>
+            <option value="Data Analyst Track">Data Analyst SQL & Pandas Track</option>
+            <option value="ML Engineering">ML Engineering & Kaggle Track</option>
+          </select>
+        </div>
+
+        <!-- Time Window Presets + Slider -->
+        <div>
+          <div class="flex justify-between items-center mb-1.5">
+            <label class="text-xs font-medium text-slate-400">Available Time Window</label>
+            <span id="minutesLabel" class="mono text-sm font-semibold text-cyan-400">30 mins</span>
+          </div>
+          <input type="range" id="minutesSlider" min="15" max="90" step="5" value="30"
+                 oninput="updateMinutes(this.value)"
+                 class="w-full accent-indigo-500 cursor-pointer" />
+          <div class="grid grid-cols-3 gap-2 mt-2.5">
+            <button onclick="setPresetMinutes(15)" class="text-xs py-1.5 rounded-lg bg-slate-800/80 hover:bg-indigo-600/30 border border-slate-700 text-slate-300 transition">15m Drill</button>
+            <button onclick="setPresetMinutes(30)" class="text-xs py-1.5 rounded-lg bg-slate-800/80 hover:bg-indigo-600/30 border border-slate-700 text-slate-300 transition">30m Focus</button>
+            <button onclick="setPresetMinutes(60)" class="text-xs py-1.5 rounded-lg bg-slate-800/80 hover:bg-indigo-600/30 border border-slate-700 text-slate-300 transition">60m Deep</button>
+          </div>
+        </div>
+
+        <!-- Resource Format Filter -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1.5">Resource Format</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button data-type="All" onclick="setType('All')" class="type-btn text-xs py-2 rounded-xl border border-indigo-500 bg-indigo-600/20 text-white font-medium">All Formats</button>
+            <button data-type="Coding Problem" onclick="setType('Coding Problem')" class="type-btn text-xs py-2 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 hover:text-white">Coding Problems</button>
+            <button data-type="Tutorial" onclick="setType('Tutorial')" class="type-btn text-xs py-2 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 hover:text-white">Visual Guides</button>
+            <button data-type="Dataset" onclick="setType('Dataset')" class="type-btn text-xs py-2 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 hover:text-white">Kaggle Datasets</button>
+          </div>
+        </div>
+
+        <label class="flex items-center justify-between pt-2 border-t border-slate-800 cursor-pointer">
+          <span class="text-xs text-slate-300">Boost Weak Topics & Error Recovery</span>
+          <input type="checkbox" id="focusWeak" checked onchange="fetchRecommendations()" class="w-4 h-4 accent-indigo-500 rounded" />
+        </label>
+      </section>
+
+      <!-- Skill Mastery Radar Chart -->
+      <section class="glass rounded-2xl p-6 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-cyan-400">Skill Mastery Radar</h2>
+          <span class="text-[11px] text-slate-400">Live %</span>
+        </div>
+        <div class="relative h-60 w-full">
+          <canvas id="masteryChart"></canvas>
+        </div>
+      </section>
+
+      <!-- Weak Topics & Attempt Stream -->
+      <section class="glass rounded-2xl p-6 space-y-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-rose-400">Detected Weak Areas</h2>
+        <div id="weakTopicsContainer" class="flex flex-wrap gap-2"></div>
+
+        <div class="pt-3 border-t border-slate-800">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Recent Attempt Stream</h3>
+          <div id="historyContainer" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+        </div>
+      </section>
+
+    </aside>
+
+    <!-- Right Main Content -->
+    <section class="lg:col-span-8 space-y-6">
+
+      <!-- KPI Strip -->
+      <div class="grid grid-cols-3 gap-4">
+        <div class="glass rounded-2xl p-4">
+          <p class="text-xs text-slate-400">Solved Items</p>
+          <p id="statSolved" class="text-2xl font-bold text-emerald-400 mt-1 mono">0</p>
+        </div>
+        <div class="glass rounded-2xl p-4">
+          <p class="text-xs text-slate-400">Total Logged Attempts</p>
+          <p id="statAttempts" class="text-2xl font-bold text-white mt-1 mono">0</p>
+        </div>
+        <div class="glass rounded-2xl p-4">
+          <p class="text-xs text-slate-400">Focused Practice Time</p>
+          <p id="statMinutes" class="text-2xl font-bold text-cyan-400 mt-1 mono">0m</p>
+        </div>
+      </div>
+
+      <!-- Heading -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-white">Recommended Next Steps</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Start a card's Focus Timer to log your real solving duration automatically</p>
+        </div>
+        <span id="resultCount" class="mono text-xs text-slate-400">0 matches</span>
+      </div>
+
+      <!-- Cards Grid -->
+      <div id="recsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+
+    </section>
+  </main>
+
+  <!-- Cold-Start Onboarding Modal -->
+  <div id="onboardingModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="glass bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-white">New Learner Onboarding</h3>
+        <button onclick="closeOnboardingModal()" class="text-slate-400 hover:text-white text-sm">✕</button>
+      </div>
+      <p class="text-xs text-slate-400">Set your current level and 2–3 focus topics to initialize personalized cold-start recommendations.</p>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Your Name</label>
+        <input type="text" id="newLearnerName" placeholder="e.g., Rohan Sharma" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Current Skill Level</label>
+        <select id="newLearnerSkill" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white">
+          <option value="Beginner">Beginner (Prioritize Easy drills)</option>
+          <option value="Intermediate" selected>Intermediate (Prioritize Medium problems)</option>
+          <option value="Advanced">Advanced (Prioritize Hard challenges)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-2">Select Target Topics (Pick 2–3)</label>
+        <div class="grid grid-cols-2 gap-2 text-xs" id="onboardingTopics">
+          <label class="flex items-center gap-2 bg-slate-950/80 p-2 rounded-lg border border-slate-800 cursor-pointer">
+            <input type="checkbox" value="Arrays & Hashing" checked class="accent-indigo-500"> Arrays & Hashing
+          </label>
+          <label class="flex items-center gap-2 bg-slate-950/80 p-2 rounded-lg border border-slate-800 cursor-pointer">
+            <input type="checkbox" value="Dynamic Programming" class="accent-indigo-500"> Dynamic Programming
+          </label>
+          <label class="flex items-center gap-2 bg-slate-950/80 p-2 rounded-lg border border-slate-800 cursor-pointer">
+            <input type="checkbox" value="Graphs" class="accent-indigo-500"> Graphs
+          </label>
+          <label class="flex items-center gap-2 bg-slate-950/80 p-2 rounded-lg border border-slate-800 cursor-pointer">
+            <input type="checkbox" value="SQL" checked class="accent-indigo-500"> SQL
+          </label>
+          <label class="flex items-center gap-2 bg-slate-950/80 p-2 rounded-lg border border-slate-800 cursor-pointer">
+            <input type="checkbox" value="Data Analytics" class="accent-indigo-500"> Data Analytics
+          </label>
+          <label class="flex items-center gap-2 bg-slate-950/80 p-2 rounded-lg border border-slate-800 cursor-pointer">
+            <input type="checkbox" value="Machine Learning" class="accent-indigo-500"> Machine Learning
+          </label>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2.5 pt-2">
+        <button onclick="closeOnboardingModal()" class="px-4 py-2 rounded-xl text-xs bg-slate-800 text-slate-300">Cancel</button>
+        <button onclick="registerLearner()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white">Create Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentType = 'All';
+    let masteryChartInstance = null;
+    const activeTimers = {}; // { itemId: { remainingSec, totalSec, intervalId, running } }
+
+    async function loadUsers(selectUserId = null) {
+      const res = await fetch('/api/users');
+      const users = await res.json();
+      const select = document.getElementById('userId');
+      select.innerHTML = users.map(u =>
+        `<option value="${u.user_id}">${u.name} (${u.skill_level})</option>`
+      ).join('');
+      if (selectUserId) select.value = selectUserId;
+    }
+
+    function openOnboardingModal() {
+      const modal = document.getElementById('onboardingModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeOnboardingModal() {
+      const modal = document.getElementById('onboardingModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function registerLearner() {
+      const name = document.getElementById('newLearnerName').value;
+      const skill_level = document.getElementById('newLearnerSkill').value;
+      const target_topics = Array.from(document.querySelectorAll('#onboardingTopics input:checked')).map(cb => cb.value);
+
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, skill_level, target_topics })
+      });
+      const created = await res.json();
+      closeOnboardingModal();
+      document.getElementById('newLearnerName').value = '';
+      await loadUsers(created.user_id);
+      fetchRecommendations();
+    }
+
+    function updateMinutes(val) {
+      document.getElementById('minutesLabel').textContent = `${val} mins`;
+      fetchRecommendations();
+    }
+
+    function setPresetMinutes(val) {
+      document.getElementById('minutesSlider').value = val;
+      updateMinutes(val);
+    }
+
+    function setType(type) {
+      currentType = type;
+      document.querySelectorAll('.type-btn').forEach(btn => {
+        btn.className = btn.dataset.type === type
+          ? 'type-btn text-xs py-2 rounded-xl border border-indigo-500 bg-indigo-600/20 text-white font-medium'
+          : 'type-btn text-xs py-2 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 hover:text-white';
+      });
+      fetchRecommendations();
+    }
+
+    function difficultyBadge(diff) {
+      if (diff === 'Easy') return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+      if (diff === 'Medium') return 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+      return 'bg-rose-500/15 text-rose-300 border-rose-500/30';
+    }
+
+    function formatClock(sec) {
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function toggleTimer(itemId, estMinutes) {
+      if (!activeTimers[itemId]) {
+        activeTimers[itemId] = {
+          totalSec: estMinutes * 60,
+          remainingSec: estMinutes * 60,
+          intervalId: null,
+          running: false
+        };
+      }
+      const timer = activeTimers[itemId];
+      const btn = document.getElementById(`timer-btn-${itemId}`);
+      const display = document.getElementById(`timer-display-${itemId}`);
+
+      if (timer.running) {
+        clearInterval(timer.intervalId);
+        timer.running = false;
+        btn.textContent = '▶ Resume';
+      } else {
+        timer.running = true;
+        btn.textContent = '⏸ Pause';
+        timer.intervalId = setInterval(() => {
+          if (timer.remainingSec > 0) {
+            timer.remainingSec--;
+            display.textContent = formatClock(timer.remainingSec);
+          } else {
+            clearInterval(timer.intervalId);
+            timer.running = false;
+            btn.textContent = 'Time Up!';
+          }
+        }, 1000);
+      }
+    }
+
+    function getActualMinutesSpent(itemId, fallbackMinutes) {
+      const timer = activeTimers[itemId];
+      if (!timer) return fallbackMinutes;
+      if (timer.intervalId) clearInterval(timer.intervalId);
+      const elapsedSec = timer.totalSec - timer.remainingSec;
+      delete activeTimers[itemId];
+      return elapsedSec >= 60 ? Math.round(elapsedSec / 60) : fallbackMinutes;
+    }
+
+    function renderMasteryChart(masteryObj) {
+      const labels = Object.keys(masteryObj);
+      const values = Object.values(masteryObj);
+      const ctx = document.getElementById('masteryChart').getContext('2d');
+
+      if (masteryChartInstance) {
+        masteryChartInstance.data.labels = labels;
+        masteryChartInstance.data.datasets[0].data = values;
+        masteryChartInstance.update();
+        return;
+      }
+
+      masteryChartInstance = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Mastery %',
+            data: values,
+            backgroundColor: 'rgba(99, 102, 241, 0.25)',
+            borderColor: '#38bdf8',
+            pointBackgroundColor: '#818cf8',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              min: 0,
+              max: 100,
+              ticks: { display: false, stepSize: 25 },
+              grid: { color: 'rgba(148, 163, 184, 0.15)' },
+              angleLines: { color: 'rgba(148, 163, 184, 0.15)' },
+              pointLabels: { color: '#cbd5e1', font: { size: 10 } }
+            }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    async function fetchRecommendations() {
+      const userId = document.getElementById('userId').value || 1;
+      const minutes = document.getElementById('minutesSlider').value;
+      const roadmap = document.getElementById('roadmapSelect').value;
+      const focusWeak = document.getElementById('focusWeak').checked;
+
+      const res = await fetch(`/api/recommend?user_id=${userId}&minutes=${minutes}&type=${encodeURIComponent(currentType)}&roadmap=${encodeURIComponent(roadmap)}&focus_weak=${focusWeak}`);
+      const data = await res.json();
+
+      document.getElementById('statSolved').textContent = data.stats.solved_count || 0;
+      document.getElementById('statAttempts').textContent = data.stats.total_attempts || 0;
+      document.getElementById('statMinutes').textContent = `${data.stats.total_minutes || 0}m`;
+
+      renderMasteryChart(data.mastery);
+
+      const weakEl = document.getElementById('weakTopicsContainer');
+      weakEl.innerHTML = data.weak_topics.length === 0
+        ? `<span class="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">All topics healthy</span>`
+        : data.weak_topics.map(t => `<span class="text-xs font-medium text-rose-300 bg-rose-500/15 border border-rose-500/30 px-3 py-1 rounded-full">⚠ ${t}</span>`).join('');
+
+      const histEl = document.getElementById('historyContainer');
+      histEl.innerHTML = data.history.map(h => {
+        const pill = h.status === 'solved'
+          ? '<span class="text-[11px] text-emerald-400 mono">SOLVED</span>'
+          : `<span class="text-[11px] text-rose-400 mono">${h.status.toUpperCase()}</span>`;
+        return `
+          <div class="flex items-center justify-between bg-slate-900/70 border border-slate-800/80 rounded-xl px-3 py-2">
+            <div class="truncate pr-2">
+              <p class="text-xs font-medium text-slate-200 truncate">${h.title}</p>
+              <p class="text-[11px] text-slate-500">${h.topic} • ${h.time_spent}m</p>
+            </div>
+            ${pill}
+          </div>`;
+      }).join('');
+
+      const grid = document.getElementById('recsGrid');
+      document.getElementById('resultCount').textContent = `${data.recommendations.length} matches`;
+
+      if (data.recommendations.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-2 glass rounded-2xl p-10 text-center">
+            <p class="text-slate-300 font-medium">No unsolved items fit within ${minutes} minutes for this track/filter.</p>
+            <p class="text-xs text-slate-500 mt-1">Try increasing your available time window or switching Roadmap to "All Tracks".</p>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = data.recommendations.map(item => {
+        const matchPct = Math.min(99, Math.round(item.final_score * 85));
+        return `
+          <div class="glass card-hover rounded-2xl p-5 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-2.5">
+                <span class="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-indigo-500/15 text-indigo-300 border border-indigo-500/25">
+                  ${item.roadmap} • ${item.item_type}
+                </span>
+                <span class="mono text-xs font-semibold text-cyan-400">${matchPct}% Match</span>
+              </div>
+
+              <a href="${item.url || '#'}" target="_blank" class="text-base font-bold text-white hover:text-indigo-300 transition leading-snug block">
+                ${item.title} ↗
+              </a>
+
+              <div class="flex flex-wrap items-center gap-2 mt-2.5">
+                <span class="text-xs px-2.5 py-0.5 rounded-full border ${difficultyBadge(item.difficulty)}">${item.difficulty}</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300">${item.topic}</span>
+                <span class="mono text-xs text-slate-400">⏱ ${item.est_minutes}m</span>
+              </div>
+
+              <div class="mt-3 p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300 leading-relaxed">
+                <span class="text-indigo-400 font-semibold">Why:</span> ${item.why_recommended}
+              </div>
+            </div>
+
+            <div class="space-y-2.5 pt-2 border-t border-slate-800/80">
+              <!-- Live Focus Pomodoro Strip -->
+              <div class="flex items-center justify-between bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-1.5">
+                <span class="mono text-xs text-cyan-300" id="timer-display-${item.item_id}">${formatClock(item.est_minutes * 60)}</span>
+                <button id="timer-btn-${item.item_id}" onclick="toggleTimer(${item.item_id}, ${item.est_minutes})"
+                        class="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-indigo-600/40 text-slate-200 transition">
+                  ▶ Start Focus Timer
+                </button>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2.5">
+                <button onclick="logFeedback(${item.item_id}, 'solved', ${item.est_minutes})"
+                        class="py-2 rounded-xl text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition">
+                  ✓ Mark Solved
+                </button>
+                <button onclick="logFeedback(${item.item_id}, 'failed_logic', ${item.est_minutes})"
+                        class="py-2 rounded-xl text-xs font-semibold bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 transition">
+                  ✕ Log Failed
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function logFeedback(itemId, status, fallbackMinutes) {
+      const userId = document.getElementById('userId').value;
+      const actualMinutes = getActualMinutesSpent(itemId, fallbackMinutes);
+      await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, item_id: itemId, status, time_spent: actualMinutes })
+      });
+      fetchRecommendations();
+    }
+
+    async function uploadCSV(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload-csv', { method: 'POST', body: formData });
+      if (res.ok) {
+        alert('CSV ingested and recommender model retrained!');
+        await loadUsers();
+        fetchRecommendations();
+      } else {
+        alert('Failed to ingest CSV. Ensure it has title and difficulty columns.');
+      }
+    }
+
+    async function resetDemo() {
+      await fetch('/api/reset', { method: 'POST' });
+      await loadUsers(1);
+      fetchRecommendations();
+    }
+
+    (async () => {
+      await loadUsers(1);
+      fetchRecommendations();
+    })();
+  </script>
+</body>
+</html>

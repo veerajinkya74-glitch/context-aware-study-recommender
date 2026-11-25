@@ -1,0 +1,35 @@
+title,item_type,topic,difficulty,est_minutes,tags,roadmap,url
+Two Sum,Coding Problem,Arrays & Hashing,Easy,15,arrays hash-map lookup two-pointers,SDE Blind 75,https://leetcode.com/problems/two-sum/
+Best Time to Buy and Sell Stock,Coding Problem,Arrays & Hashing,Easy,15,arrays greedy sliding-window,SDE Blind 75,https://leetcode.com/problems/best-time-to-buy-and-sell-stock/
+Product of Array Except Self,Coding Problem,Arrays & Hashing,Medium,25,arrays prefix-sum suffix,SDE Blind 75,https://leetcode.com/problems/product-of-array-except-self/
+Group Anagrams,Coding Problem,Arrays & Hashing,Medium,25,strings hash-map sorting,SDE Blind 75,https://leetcode.com/problems/group-anagrams/
+Subarray Sum Equals K,Coding Problem,Arrays & Hashing,Medium,30,arrays prefix-sum hash-map,SDE Blind 75,https://leetcode.com/problems/subarray-sum-equals-k/
+3Sum,Coding Problem,Two Pointers,Medium,30,arrays two-pointers sorting,SDE Blind 75,https://leetcode.com/problems/3sum/
+Container With Most Water,Coding Problem,Two Pointers,Medium,25,arrays two-pointers greedy,SDE Blind 75,https://leetcode.com/problems/container-with-most-water/
+Trapping Rain Water,Coding Problem,Two Pointers,Hard,45,two-pointers dynamic-programming stack,SDE Blind 75,https://leetcode.com/problems/trapping-rain-water/
+Longest Substring Without Repeating Characters,Coding Problem,Sliding Window,Medium,25,strings sliding-window hash-set,SDE Blind 75,https://leetcode.com/problems/longest-substring-without-repeating-characters/
+Minimum Window Substring,Coding Problem,Sliding Window,Hard,50,strings sliding-window hash-map,SDE Blind 75,https://leetcode.com/problems/minimum-window-substring/
+Valid Parentheses,Coding Problem,Stacks,Easy,15,stack strings parsing,SDE Blind 75,https://leetcode.com/problems/valid-parentheses/
+Daily Temperatures,Coding Problem,Stacks,Medium,30,monotonic-stack arrays,SDE Blind 75,https://leetcode.com/problems/daily-temperatures/
+Climbing Stairs,Coding Problem,Dynamic Programming,Easy,15,dp fibonacci memoization,SDE Blind 75,https://leetcode.com/problems/climbing-stairs/
+House Robber,Coding Problem,Dynamic Programming,Medium,25,dp 1d-array state-transition,SDE Blind 75,https://leetcode.com/problems/house-robber/
+Coin Change,Coding Problem,Dynamic Programming,Medium,35,dp unbounded-knapsack bottom-up,SDE Blind 75,https://leetcode.com/problems/coin-change/
+Longest Increasing Subsequence,Coding Problem,Dynamic Programming,Medium,35,dp binary-search subsequence,SDE Blind 75,https://leetcode.com/problems/longest-increasing-subsequence/
+Edit Distance,Coding Problem,Dynamic Programming,Hard,55,dp 2d-matrix strings levenshtein,SDE Blind 75,https://leetcode.com/problems/edit-distance/
+Number of Islands,Coding Problem,Graphs,Medium,30,bfs dfs grid connected-components,SDE Blind 75,https://leetcode.com/problems/number-of-islands/
+Clone Graph,Coding Problem,Graphs,Medium,30,bfs dfs hash-map graph,SDE Blind 75,https://leetcode.com/problems/clone-graph/
+Course Schedule,Coding Problem,Graphs,Medium,40,topological-sort dfs cycle-detection,SDE Blind 75,https://leetcode.com/problems/course-schedule/
+Word Ladder,Coding Problem,Graphs,Hard,55,bfs shortest-path strings,SDE Blind 75,https://leetcode.com/problems/word-ladder/
+Binary Tree Level Order Traversal,Coding Problem,Trees,Medium,25,tree bfs queue,SDE Blind 75,https://leetcode.com/problems/binary-tree-level-order-traversal/
+Lowest Common Ancestor of a BST,Coding Problem,Trees,Medium,20,bst recursion tree,SDE Blind 75,https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/
+Second Highest Salary,Coding Problem,SQL,Easy,15,sql subquery limit offset null,Data Analyst Track,https://leetcode.com/problems/second-highest-salary/
+Consecutive Numbers,Coding Problem,SQL,Medium,25,sql window-functions lead lag,Data Analyst Track,https://leetcode.com/problems/consecutive-numbers/
+Department Top Three Salaries,Coding Problem,SQL,Hard,40,sql dense-rank window-functions joins,Data Analyst Track,https://leetcode.com/problems/department-top-three-salaries/
+SQL Window Functions Cheat Sheet & Labs,Tutorial,SQL,Medium,20,sql rank dense-rank partition-by,Data Analyst Track,https://mode.com/sql-tutorial/sql-window-functions/
+Telco Customer Churn Prediction (Kaggle),Dataset,Data Analytics,Medium,45,pandas eda classification imbalanced-data,Data Analyst Track,https://www.kaggle.com/datasets/blastchar/telco-customer-churn
+Store Sales Time Series Forecasting (Kaggle),Dataset,Data Analytics,Medium,50,pandas time-series rolling-features,Data Analyst Track,https://www.kaggle.com/c/store-sales-time-series-forecasting
+Credit Card Fraud Detection (Kaggle),Dataset,Machine Learning,Hard,60,anomaly-detection precision-recall smote,ML Engineering,https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
+Titanic Survival Feature Engineering Lab,Dataset,Machine Learning,Easy,30,pandas seaborn classification baseline,ML Engineering,https://www.kaggle.com/c/titanic
+Dynamic Programming State Transition Visual Guide,Tutorial,Dynamic Programming,Medium,20,dp state recurrence base-case,SDE Blind 75,https://neetcode.io/
+Graph Traversal: BFS vs DFS Patterns,Tutorial,Graphs,Medium,20,bfs dfs shortest-path topological-sort,SDE Blind 75,https://visualgo.net/en/dfsbfs
+Sliding Window & Two Pointer Masterclass,Tutorial,Sliding Window,Easy,15,sliding-window two-pointers strings,SDE Blind 75,https://leetcode.com/explore/
