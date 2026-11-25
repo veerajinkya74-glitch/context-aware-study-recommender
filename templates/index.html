@@ -6,59 +6,204 @@
   <title>NextStep AI • Context-Aware Study & Coding Recommender</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Inter', sans-serif;
-      background: radial-gradient(circle at top left, #0f172a, #090d16 60%);
+      background-color: #060913;
       color: #e2e8f0;
       min-height: 100vh;
+      overflow-x: hidden;
     }
     .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Animated Ambient Background Orbs */
+    .bg-orb {
+      position: fixed;
+      border-radius: 9999px;
+      filter: blur(110px);
+      z-index: -1;
+      opacity: 0.35;
+      pointer-events: none;
+      animation: floatOrb 14s ease-in-out infinite alternate;
+    }
+    .orb-1 {
+      width: 460px; height: 460px;
+      background: radial-gradient(circle, #4f46e5, transparent 70%);
+      top: -120px; left: -100px;
+    }
+    .orb-2 {
+      width: 420px; height: 420px;
+      background: radial-gradient(circle, #06b6d4, transparent 70%);
+      bottom: -100px; right: -80px;
+      animation-delay: -5s;
+    }
+    .orb-3 {
+      width: 320px; height: 320px;
+      background: radial-gradient(circle, #ec4899, transparent 70%);
+      top: 42%; left: 45%;
+      opacity: 0.16;
+      animation-delay: -9s;
+    }
+    @keyframes floatOrb {
+      0% { transform: translate(0px, 0px) scale(1); }
+      50% { transform: translate(35px, -25px) scale(1.08); }
+      100% { transform: translate(-25px, 30px) scale(0.95); }
+    }
+
+    /* Glassmorphism & Card Animations */
     .glass {
-      background: rgba(30, 41, 59, 0.55);
-      backdrop-filter: blur(14px);
+      background: rgba(15, 23, 42, 0.62);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(148, 163, 184, 0.14);
     }
-    .card-hover { transition: all 0.22s ease; }
-    .card-hover:hover {
-      transform: translateY(-3px);
-      border-color: rgba(99, 102, 241, 0.55);
-      box-shadow: 0 12px 30px -10px rgba(79, 70, 229, 0.35);
+    .card-animate {
+      opacity: 0;
+      transform: translateY(18px) scale(0.98);
+      animation: cardReveal 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.25s ease, box-shadow 0.25s ease;
     }
+    .card-animate:hover {
+      transform: translateY(-6px) scale(1.01);
+      border-color: rgba(99, 102, 241, 0.65);
+      box-shadow: 0 20px 40px -15px rgba(79, 70, 229, 0.45);
+    }
+    @keyframes cardReveal {
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Floating SVG Hero Animation */
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    .float-svg { animation: floatSlow 4.5s ease-in-out infinite; }
+
+    /* Pulse Ring for Live Status */
+    @keyframes pulseDot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.5); opacity: 0.4; }
+    }
+    .live-dot { animation: pulseDot 2s infinite; }
+
+    /* Shimmer Sweep on Hero */
+    .shimmer-border {
+      position: relative;
+      overflow: hidden;
+    }
+    .shimmer-border::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%);
+      transform: translateX(-100%);
+      animation: shimmerSweep 6s infinite;
+      pointer-events: none;
+    }
+    @keyframes shimmerSweep {
+      0% { transform: translateX(-100%); }
+      40%, 100% { transform: translateX(100%); }
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.35); border-radius: 9999px; }
   </style>
 </head>
 <body class="antialiased selection:bg-indigo-500 selection:text-white">
 
+  <!-- Animated Ambient Background Orbs -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
   <!-- Top Navbar -->
-  <header class="border-b border-slate-800/80 bg-slate-950/60 backdrop-blur-md sticky top-0 z-30">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950 text-lg shadow-lg shadow-indigo-500/30">
-          AI
+  <header class="border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+          <!-- Custom Neural Spark SVG Logo -->
+          <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
         </div>
         <div>
-          <h1 class="text-lg font-bold tracking-tight text-white">NextStep <span class="text-indigo-400">Context Recommender</span></h1>
-          <p class="text-xs text-slate-400">Hybrid SVD + TF-IDF • Pomodoro Tracking • Cold-Start Onboarding</p>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-extrabold tracking-tight text-white">NextStep <span class="bg-gradient-to-r from-indigo-400 to-cyan-300 bg-clip-text text-transparent">AI</span></h1>
+            <span class="flex items-center gap-1.5 text-[10px] mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 live-dot"></span> HYBRID ENGINE
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">Context-Aware Study & Coding Recommender</p>
         </div>
       </div>
 
       <div class="flex flex-wrap items-center gap-2.5">
-        <button onclick="openOnboardingModal()" class="px-3.5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 transition">
+        <button onclick="openOnboardingModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-cyan-500 text-white shadow-lg shadow-indigo-500/25 transition-all active:scale-95">
           + New Learner
         </button>
-        <label class="cursor-pointer px-3.5 py-2 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition">
+        <label class="cursor-pointer px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800/90 hover:bg-slate-700 text-cyan-300 border border-slate-700/80 transition-all active:scale-95">
           ⬆ Import CSV
           <input type="file" id="csvInput" accept=".csv" class="hidden" onchange="uploadCSV(event)" />
         </label>
-        <button onclick="resetDemo()" class="px-3.5 py-2 rounded-lg text-xs font-medium bg-slate-900 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 border border-slate-800 transition">
+        <button onclick="resetDemo()" class="px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-900/90 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 border border-slate-800 transition-all active:scale-95">
           Reset
         </button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+  <!-- Hero Visual Banner -->
+  <section class="max-w-7xl mx-auto px-6 pt-6">
+    <div class="glass shimmer-border rounded-3xl p-6 md:p-7 bg-gradient-to-r from-indigo-950/60 via-slate-900/70 to-cyan-950/40 border border-indigo-500/20 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="space-y-2.5 max-w-2xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-400/25 text-indigo-300 text-xs font-medium">
+          <span>✦</span> Adaptive Learning Telemetry
+        </div>
+        <h2 id="heroGreeting" class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+          Ready for your next focused coding sprint?
+        </h2>
+        <p class="text-sm text-slate-300/90 leading-relaxed">
+          Our hybrid <span class="text-cyan-300 font-medium">SVD + TF-IDF</span> model analyzes your past errors, target roadmap, and available time window to serve high-impact problems and visual guides.
+        </p>
+      </div>
+
+      <!-- Custom Animated SVG Neural Illustration -->
+      <div class="float-svg shrink-0">
+        <svg width="210" height="125" viewBox="0 0 210 125" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="nodeGrad1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#6366f1"/>
+              <stop offset="100%" stop-color="#06b6d4"/>
+            </linearGradient>
+            <linearGradient id="lineGrad" x1="0" y1="0" x2="210" y2="125" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#818cf8" stop-opacity="0.7"/>
+              <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.2"/>
+            </linearGradient>
+          </defs>
+          <!-- Glowing Backdrop -->
+          <ellipse cx="105" cy="62" rx="85" ry="45" fill="url(#nodeGrad1)" fill-opacity="0.12"/>
+          <!-- Connecting Neural Paths -->
+          <path d="M35 35 L105 22 L175 42 L145 98 L65 95 Z" stroke="url(#lineGrad)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <path d="M35 35 L145 98 M105 22 L65 95 M35 35 L175 42" stroke="#38bdf8" stroke-opacity="0.35" stroke-width="1.2"/>
+          <!-- Nodes -->
+          <circle cx="35" cy="35" r="9" fill="#0f172a" stroke="#818cf8" stroke-width="2.5"/>
+          <circle cx="105" cy="22" r="11" fill="url(#nodeGrad1)"/>
+          <circle cx="175" cy="42" r="9" fill="#0f172a" stroke="#22d3ee" stroke-width="2.5"/>
+          <circle cx="145" cy="98" r="10" fill="#0f172a" stroke="#a855f7" stroke-width="2.5"/>
+          <circle cx="65" cy="95" r="8" fill="#0f172a" stroke="#34d399" stroke-width="2.5"/>
+          <!-- Center Check Badge -->
+          <rect x="82" y="50" width="46" height="24" rx="12" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+          <text x="105" y="65" text-anchor="middle" fill="#e0f2fe" font-family="JetBrains Mono, monospace" font-size="10" font-weight="bold">AI RANK</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <main class="max-w-7xl mx-auto px-6 py-7 grid grid-cols-1 lg:grid-cols-12 gap-8">
 
     <!-- Left Sidebar -->
     <aside class="lg:col-span-4 space-y-6">
@@ -66,23 +211,23 @@
       <!-- Study Session Context -->
       <section class="glass rounded-2xl p-6 space-y-5">
         <div class="flex items-center justify-between">
-          <h2 class="text-sm font-semibold uppercase tracking-wider text-indigo-400">Study Session Context</h2>
-          <span class="text-xs mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">LIVE</span>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-400">Study Session Context</h2>
+          <span class="text-[11px] mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">REAL-TIME</span>
         </div>
 
         <!-- Learner Selector -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
             <label class="text-xs font-medium text-slate-400">Active Learner Profile</label>
-            <button onclick="openOnboardingModal()" class="text-[11px] text-indigo-400 hover:underline">+ Register</button>
+            <button onclick="openOnboardingModal()" class="text-[11px] text-indigo-400 hover:text-cyan-300 transition">+ Create New</button>
           </div>
-          <select id="userId" onchange="fetchRecommendations()" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"></select>
+          <select id="userId" onchange="fetchRecommendations()" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"></select>
         </div>
 
         <!-- Curated Study Roadmaps -->
         <div>
           <label class="block text-xs font-medium text-slate-400 mb-1.5">Curated Study Roadmap</label>
-          <select id="roadmapSelect" onchange="fetchRecommendations()" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-cyan-300 focus:outline-none focus:border-cyan-500">
+          <select id="roadmapSelect" onchange="fetchRecommendations()" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sm text-cyan-300 focus:outline-none focus:border-cyan-500 transition">
             <option value="All">All Tracks (Hybrid Discovery)</option>
             <option value="SDE Blind 75">SDE Blind 75 / DSA Track</option>
             <option value="Data Analyst Track">Data Analyst SQL & Pandas Track</option>
@@ -94,15 +239,15 @@
         <div>
           <div class="flex justify-between items-center mb-1.5">
             <label class="text-xs font-medium text-slate-400">Available Time Window</label>
-            <span id="minutesLabel" class="mono text-sm font-semibold text-cyan-400">30 mins</span>
+            <span id="minutesLabel" class="mono text-sm font-bold text-cyan-400">30 mins</span>
           </div>
           <input type="range" id="minutesSlider" min="15" max="90" step="5" value="30"
                  oninput="updateMinutes(this.value)"
                  class="w-full accent-indigo-500 cursor-pointer" />
           <div class="grid grid-cols-3 gap-2 mt-2.5">
-            <button onclick="setPresetMinutes(15)" class="text-xs py-1.5 rounded-lg bg-slate-800/80 hover:bg-indigo-600/30 border border-slate-700 text-slate-300 transition">15m Drill</button>
-            <button onclick="setPresetMinutes(30)" class="text-xs py-1.5 rounded-lg bg-slate-800/80 hover:bg-indigo-600/30 border border-slate-700 text-slate-300 transition">30m Focus</button>
-            <button onclick="setPresetMinutes(60)" class="text-xs py-1.5 rounded-lg bg-slate-800/80 hover:bg-indigo-600/30 border border-slate-700 text-slate-300 transition">60m Deep</button>
+            <button onclick="setPresetMinutes(15)" class="text-xs py-1.5 rounded-lg bg-slate-800/80 hover:bg-indigo-600/30 border border-slate-700 text-slate-300 transition active:scale-95">⚡ 15m Drill</button>
+            <button onclick="setPresetMinutes(30)" class="text-xs py-1.5 rounded-lg bg-slate-800/80 hover:bg-indigo-600/30 border border-slate-700 text-slate-300 transition active:scale-95">🎯 30m Focus</button>
+            <button onclick="setPresetMinutes(60)" class="text-xs py-1.5 rounded-lg bg-slate-800/80 hover:bg-indigo-600/30 border border-slate-700 text-slate-300 transition active:scale-95">🔥 60m Deep</button>
           </div>
         </div>
 
@@ -110,10 +255,10 @@
         <div>
           <label class="block text-xs font-medium text-slate-400 mb-1.5">Resource Format</label>
           <div class="grid grid-cols-2 gap-2">
-            <button data-type="All" onclick="setType('All')" class="type-btn text-xs py-2 rounded-xl border border-indigo-500 bg-indigo-600/20 text-white font-medium">All Formats</button>
-            <button data-type="Coding Problem" onclick="setType('Coding Problem')" class="type-btn text-xs py-2 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 hover:text-white">Coding Problems</button>
-            <button data-type="Tutorial" onclick="setType('Tutorial')" class="type-btn text-xs py-2 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 hover:text-white">Visual Guides</button>
-            <button data-type="Dataset" onclick="setType('Dataset')" class="type-btn text-xs py-2 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 hover:text-white">Kaggle Datasets</button>
+            <button data-type="All" onclick="setType('All')" class="type-btn text-xs py-2 rounded-xl border border-indigo-500 bg-indigo-600/20 text-white font-medium transition">All Formats</button>
+            <button data-type="Coding Problem" onclick="setType('Coding Problem')" class="type-btn text-xs py-2 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 hover:text-white transition">Coding Problems</button>
+            <button data-type="Tutorial" onclick="setType('Tutorial')" class="type-btn text-xs py-2 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 hover:text-white transition">Visual Guides</button>
+            <button data-type="Dataset" onclick="setType('Dataset')" class="type-btn text-xs py-2 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 hover:text-white transition">Kaggle Datasets</button>
           </div>
         </div>
 
@@ -126,8 +271,8 @@
       <!-- Skill Mastery Radar Chart -->
       <section class="glass rounded-2xl p-6 space-y-3">
         <div class="flex items-center justify-between">
-          <h2 class="text-sm font-semibold uppercase tracking-wider text-cyan-400">Skill Mastery Radar</h2>
-          <span class="text-[11px] text-slate-400">Live %</span>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-cyan-400">Skill Mastery Radar</h2>
+          <span class="text-[11px] text-slate-400">Live Telemetry</span>
         </div>
         <div class="relative h-60 w-full">
           <canvas id="masteryChart"></canvas>
@@ -136,11 +281,11 @@
 
       <!-- Weak Topics & Attempt Stream -->
       <section class="glass rounded-2xl p-6 space-y-4">
-        <h2 class="text-sm font-semibold uppercase tracking-wider text-rose-400">Detected Weak Areas</h2>
+        <h2 class="text-xs font-bold uppercase tracking-wider text-rose-400">Detected Weak Areas</h2>
         <div id="weakTopicsContainer" class="flex flex-wrap gap-2"></div>
 
         <div class="pt-3 border-t border-slate-800">
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Recent Attempt Stream</h3>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Recent Attempt Stream</h3>
           <div id="historyContainer" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
         </div>
       </section>
@@ -150,29 +295,52 @@
     <!-- Right Main Content -->
     <section class="lg:col-span-8 space-y-6">
 
-      <!-- KPI Strip -->
-      <div class="grid grid-cols-3 gap-4">
-        <div class="glass rounded-2xl p-4">
-          <p class="text-xs text-slate-400">Solved Items</p>
-          <p id="statSolved" class="text-2xl font-bold text-emerald-400 mt-1 mono">0</p>
+      <!-- Animated KPI Strip with Icons -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="glass rounded-2xl p-4 flex items-center gap-3.5 border border-emerald-500/15">
+          <div class="w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400">Solved Items</p>
+            <p id="statSolved" class="text-2xl font-extrabold text-emerald-400 mono">0</p>
+          </div>
         </div>
-        <div class="glass rounded-2xl p-4">
-          <p class="text-xs text-slate-400">Total Logged Attempts</p>
-          <p id="statAttempts" class="text-2xl font-bold text-white mt-1 mono">0</p>
+
+        <div class="glass rounded-2xl p-4 flex items-center gap-3.5 border border-indigo-500/15">
+          <div class="w-11 h-11 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400">Total Attempts</p>
+            <p id="statAttempts" class="text-2xl font-extrabold text-white mono">0</p>
+          </div>
         </div>
-        <div class="glass rounded-2xl p-4">
-          <p class="text-xs text-slate-400">Focused Practice Time</p>
-          <p id="statMinutes" class="text-2xl font-bold text-cyan-400 mt-1 mono">0m</p>
+
+        <div class="glass rounded-2xl p-4 flex items-center gap-3.5 border border-cyan-500/15">
+          <div class="w-11 h-11 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400">Focus Time</p>
+            <p id="statMinutes" class="text-2xl font-extrabold text-cyan-400 mono">0m</p>
+          </div>
         </div>
       </div>
 
       <!-- Heading -->
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-xl font-bold text-white">Recommended Next Steps</h2>
+          <h2 class="text-xl font-extrabold text-white tracking-tight">Recommended Next Steps</h2>
           <p class="text-xs text-slate-400 mt-0.5">Start a card's Focus Timer to log your real solving duration automatically</p>
         </div>
-        <span id="resultCount" class="mono text-xs text-slate-400">0 matches</span>
+        <span id="resultCount" class="mono text-xs px-3 py-1 rounded-full bg-slate-800/80 text-cyan-300 border border-slate-700">0 matches</span>
       </div>
 
       <!-- Cards Grid -->
@@ -182,22 +350,25 @@
   </main>
 
   <!-- Cold-Start Onboarding Modal -->
-  <div id="onboardingModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-    <div class="glass bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+  <div id="onboardingModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+    <div class="glass bg-slate-900/95 border border-indigo-500/30 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-bold text-white">New Learner Onboarding</h3>
+        <div class="flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-300">✦</span>
+          <h3 class="text-lg font-bold text-white">New Learner Onboarding</h3>
+        </div>
         <button onclick="closeOnboardingModal()" class="text-slate-400 hover:text-white text-sm">✕</button>
       </div>
       <p class="text-xs text-slate-400">Set your current level and 2–3 focus topics to initialize personalized cold-start recommendations.</p>
 
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1">Your Name</label>
-        <input type="text" id="newLearnerName" placeholder="e.g., Rohan Sharma" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
+        <input type="text" id="newLearnerName" placeholder="e.g., Ajinkya Veer" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" />
       </div>
 
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1">Current Skill Level</label>
-        <select id="newLearnerSkill" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white">
+        <select id="newLearnerSkill" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white">
           <option value="Beginner">Beginner (Prioritize Easy drills)</option>
           <option value="Intermediate" selected>Intermediate (Prioritize Medium problems)</option>
           <option value="Advanced">Advanced (Prioritize Hard challenges)</option>
@@ -207,22 +378,22 @@
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-2">Select Target Topics (Pick 2–3)</label>
         <div class="grid grid-cols-2 gap-2 text-xs" id="onboardingTopics">
-          <label class="flex items-center gap-2 bg-slate-950/80 p-2 rounded-lg border border-slate-800 cursor-pointer">
+          <label class="flex items-center gap-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800 hover:border-indigo-500/40 cursor-pointer">
             <input type="checkbox" value="Arrays & Hashing" checked class="accent-indigo-500"> Arrays & Hashing
           </label>
-          <label class="flex items-center gap-2 bg-slate-950/80 p-2 rounded-lg border border-slate-800 cursor-pointer">
+          <label class="flex items-center gap-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800 hover:border-indigo-500/40 cursor-pointer">
             <input type="checkbox" value="Dynamic Programming" class="accent-indigo-500"> Dynamic Programming
           </label>
-          <label class="flex items-center gap-2 bg-slate-950/80 p-2 rounded-lg border border-slate-800 cursor-pointer">
+          <label class="flex items-center gap-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800 hover:border-indigo-500/40 cursor-pointer">
             <input type="checkbox" value="Graphs" class="accent-indigo-500"> Graphs
           </label>
-          <label class="flex items-center gap-2 bg-slate-950/80 p-2 rounded-lg border border-slate-800 cursor-pointer">
+          <label class="flex items-center gap-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800 hover:border-indigo-500/40 cursor-pointer">
             <input type="checkbox" value="SQL" checked class="accent-indigo-500"> SQL
           </label>
-          <label class="flex items-center gap-2 bg-slate-950/80 p-2 rounded-lg border border-slate-800 cursor-pointer">
+          <label class="flex items-center gap-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800 hover:border-indigo-500/40 cursor-pointer">
             <input type="checkbox" value="Data Analytics" class="accent-indigo-500"> Data Analytics
           </label>
-          <label class="flex items-center gap-2 bg-slate-950/80 p-2 rounded-lg border border-slate-800 cursor-pointer">
+          <label class="flex items-center gap-2 bg-slate-950/80 p-2.5 rounded-xl border border-slate-800 hover:border-indigo-500/40 cursor-pointer">
             <input type="checkbox" value="Machine Learning" class="accent-indigo-500"> Machine Learning
           </label>
         </div>
@@ -230,7 +401,7 @@
 
       <div class="flex justify-end gap-2.5 pt-2">
         <button onclick="closeOnboardingModal()" class="px-4 py-2 rounded-xl text-xs bg-slate-800 text-slate-300">Cancel</button>
-        <button onclick="registerLearner()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white">Create Profile</button>
+        <button onclick="registerLearner()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/25">Create Profile</button>
       </div>
     </div>
   </div>
@@ -238,7 +409,91 @@
   <script>
     let currentType = 'All';
     let masteryChartInstance = null;
-    const activeTimers = {}; // { itemId: { remainingSec, totalSec, intervalId, running } }
+    const activeTimers = {};
+
+    // Topic-Specific Visual Banner & Crisp SVG Illustration Generator
+    function getTopicVisual(topic, itemType) {
+      const visuals = {
+        "Dynamic Programming": {
+          gradient: "from-purple-600/30 via-indigo-900/40 to-slate-900",
+          accent: "#c084fc",
+          svg: `<svg class="w-12 h-12 opacity-85" viewBox="0 0 64 64" fill="none">
+                  <rect x="8" y="8" width="14" height="14" rx="3" stroke="#c084fc" stroke-width="2"/>
+                  <rect x="26" y="8" width="14" height="14" rx="3" stroke="#818cf8" stroke-width="2"/>
+                  <rect x="8" y="26" width="14" height="14" rx="3" stroke="#818cf8" stroke-width="2"/>
+                  <rect x="26" y="26" width="14" height="14" rx="3" fill="#c084fc" fill-opacity="0.3" stroke="#e879f9" stroke-width="2"/>
+                  <path d="M22 15H26M15 22V26M40 33H48V48H33V40" stroke="#e879f9" stroke-width="2" stroke-linecap="round"/>
+                </svg>`
+        },
+        "Graphs": {
+          gradient: "from-cyan-600/30 via-blue-900/40 to-slate-900",
+          accent: "#22d3ee",
+          svg: `<svg class="w-12 h-12 opacity-85" viewBox="0 0 64 64" fill="none">
+                  <circle cx="16" cy="20" r="5" stroke="#22d3ee" stroke-width="2"/>
+                  <circle cx="48" cy="18" r="5" stroke="#38bdf8" stroke-width="2"/>
+                  <circle cx="32" cy="46" r="6" fill="#22d3ee" fill-opacity="0.25" stroke="#22d3ee" stroke-width="2"/>
+                  <path d="M21 20L43 18M19 24L29 41M45 22L35 41" stroke="#38bdf8" stroke-width="2"/>
+                </svg>`
+        },
+        "SQL": {
+          gradient: "from-emerald-600/30 via-teal-900/40 to-slate-900",
+          accent: "#34d399",
+          svg: `<svg class="w-12 h-12 opacity-85" viewBox="0 0 64 64" fill="none">
+                  <ellipse cx="32" cy="16" rx="18" ry="6" stroke="#34d399" stroke-width="2"/>
+                  <path d="M14 16V32C14 35.3 22 38 32 38C42 38 50 35.3 50 32V16" stroke="#34d399" stroke-width="2"/>
+                  <path d="M14 32V48C14 51.3 22 54 32 54C42 54 50 51.3 50 48V32" stroke="#10b981" stroke-width="2"/>
+                </svg>`
+        },
+        "Data Analytics": {
+          gradient: "from-amber-600/30 via-orange-900/40 to-slate-900",
+          accent: "#fbbf24",
+          svg: `<svg class="w-12 h-12 opacity-85" viewBox="0 0 64 64" fill="none">
+                  <rect x="12" y="34" width="8" height="18" rx="2" fill="#fbbf24" fill-opacity="0.3" stroke="#fbbf24" stroke-width="2"/>
+                  <rect x="28" y="22" width="8" height="30" rx="2" fill="#f59e0b" fill-opacity="0.3" stroke="#f59e0b" stroke-width="2"/>
+                  <rect x="44" y="12" width="8" height="40" rx="2" fill="#fbbf24" fill-opacity="0.45" stroke="#fde68a" stroke-width="2"/>
+                </svg>`
+        },
+        "Machine Learning": {
+          gradient: "from-pink-600/30 via-rose-900/40 to-slate-900",
+          accent: "#f472b6",
+          svg: `<svg class="w-12 h-12 opacity-85" viewBox="0 0 64 64" fill="none">
+                  <circle cx="14" cy="18" r="4" stroke="#f472b6" stroke-width="2"/>
+                  <circle cx="14" cy="46" r="4" stroke="#f472b6" stroke-width="2"/>
+                  <circle cx="32" cy="32" r="5" fill="#f472b6" fill-opacity="0.3" stroke="#f472b6" stroke-width="2"/>
+                  <circle cx="50" cy="22" r="4" stroke="#fb7185" stroke-width="2"/>
+                  <circle cx="50" cy="42" r="4" stroke="#fb7185" stroke-width="2"/>
+                  <path d="M18 19L28 29M18 45L28 35M37 30L46 23M37 34L46 41" stroke="#f472b6" stroke-width="1.8"/>
+                </svg>`
+        }
+      };
+
+      return visuals[topic] || {
+        gradient: "from-indigo-600/30 via-slate-800/60 to-slate-900",
+        accent: "#818cf8",
+        svg: `<svg class="w-12 h-12 opacity-85" viewBox="0 0 64 64" fill="none">
+                <polyline points="22 20 10 32 22 44" stroke="#818cf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="42 20 54 32 42 44" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="36" y1="16" x2="28" y2="48" stroke="#c084fc" stroke-width="2.2" stroke-linecap="round"/>
+              </svg>`
+      };
+    }
+
+    // Circular SVG Progress Ring for Match Score
+    function buildMatchRing(pct) {
+      const radius = 18;
+      const circumference = 2 * Math.PI * radius;
+      const offset = circumference - (pct / 100) * circumference;
+      return `
+        <div class="relative w-12 h-12 flex items-center justify-center shrink-0">
+          <svg class="w-12 h-12 -rotate-90" viewBox="0 0 44 44">
+            <circle cx="22" cy="22" r="${radius}" stroke="rgba(148,163,184,0.18)" stroke-width="3.5" fill="none"/>
+            <circle cx="22" cy="22" r="${radius}" stroke="#22d3ee" stroke-width="3.5" fill="none"
+                    stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" stroke-linecap="round"/>
+          </svg>
+          <span class="absolute mono text-[10px] font-bold text-cyan-300">${pct}%</span>
+        </div>
+      `;
+    }
 
     async function loadUsers(selectUserId = null) {
       const res = await fetch('/api/users');
@@ -248,6 +503,12 @@
         `<option value="${u.user_id}">${u.name} (${u.skill_level})</option>`
       ).join('');
       if (selectUserId) select.value = selectUserId;
+
+      const selectedUser = users.find(u => u.user_id == select.value);
+      if (selectedUser) {
+        const firstName = selectedUser.name.split(' ')[0];
+        document.getElementById('heroGreeting').textContent = `Welcome back, ${firstName} — ready for your next sprint?`;
+      }
     }
 
     function openOnboardingModal() {
@@ -293,8 +554,8 @@
       currentType = type;
       document.querySelectorAll('.type-btn').forEach(btn => {
         btn.className = btn.dataset.type === type
-          ? 'type-btn text-xs py-2 rounded-xl border border-indigo-500 bg-indigo-600/20 text-white font-medium'
-          : 'type-btn text-xs py-2 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 hover:text-white';
+          ? 'type-btn text-xs py-2 rounded-xl border border-indigo-500 bg-indigo-600/20 text-white font-medium transition'
+          : 'type-btn text-xs py-2 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-400 hover:text-white transition';
       });
       fetchRecommendations();
     }
@@ -372,7 +633,7 @@
           datasets: [{
             label: 'Mastery %',
             data: values,
-            backgroundColor: 'rgba(99, 102, 241, 0.25)',
+            backgroundColor: 'rgba(99, 102, 241, 0.28)',
             borderColor: '#38bdf8',
             pointBackgroundColor: '#818cf8',
             borderWidth: 2
@@ -386,8 +647,8 @@
               min: 0,
               max: 100,
               ticks: { display: false, stepSize: 25 },
-              grid: { color: 'rgba(148, 163, 184, 0.15)' },
-              angleLines: { color: 'rgba(148, 163, 184, 0.15)' },
+              grid: { color: 'rgba(148, 163, 184, 0.16)' },
+              angleLines: { color: 'rgba(148, 163, 184, 0.16)' },
               pointLabels: { color: '#cbd5e1', font: { size: 10 } }
             }
           },
@@ -397,7 +658,13 @@
     }
 
     async function fetchRecommendations() {
-      const userId = document.getElementById('userId').value || 1;
+      const selectEl = document.getElementById('userId');
+      const userId = selectEl.value || 1;
+      if (selectEl.selectedOptions[0]) {
+        const firstName = selectEl.selectedOptions[0].text.split(' ')[0];
+        document.getElementById('heroGreeting').textContent = `Welcome back, ${firstName} — ready for your next sprint?`;
+      }
+
       const minutes = document.getElementById('minutesSlider').value;
       const roadmap = document.getElementById('roadmapSelect').value;
       const focusWeak = document.getElementById('focusWeak').checked;
@@ -413,7 +680,7 @@
 
       const weakEl = document.getElementById('weakTopicsContainer');
       weakEl.innerHTML = data.weak_topics.length === 0
-        ? `<span class="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">All topics healthy</span>`
+        ? `<span class="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">✓ All topics healthy</span>`
         : data.weak_topics.map(t => `<span class="text-xs font-medium text-rose-300 bg-rose-500/15 border border-rose-500/30 px-3 py-1 rounded-full">⚠ ${t}</span>`).join('');
 
       const histEl = document.getElementById('historyContainer');
@@ -436,57 +703,85 @@
 
       if (data.recommendations.length === 0) {
         grid.innerHTML = `
-          <div class="col-span-2 glass rounded-2xl p-10 text-center">
-            <p class="text-slate-300 font-medium">No unsolved items fit within ${minutes} minutes for this track/filter.</p>
-            <p class="text-xs text-slate-500 mt-1">Try increasing your available time window or switching Roadmap to "All Tracks".</p>
+          <div class="col-span-2 glass card-animate rounded-3xl p-12 text-center flex flex-col items-center justify-center space-y-4">
+            <div class="float-svg">
+              <svg class="w-20 h-20 text-indigo-400" viewBox="0 0 80 80" fill="none">
+                <circle cx="40" cy="40" r="30" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4"/>
+                <circle cx="40" cy="40" r="18" stroke="#22d3ee" stroke-width="2"/>
+                <path d="M40 40L54 26" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="40" cy="40" r="4" fill="#818cf8"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-base text-white font-bold">No unsolved items fit within ${minutes} minutes</p>
+              <p class="text-xs text-slate-400 mt-1 max-w-md">Try sliding your available time window up to 45–60 mins or switching Roadmap to "All Tracks".</p>
+            </div>
           </div>`;
         return;
       }
 
-      grid.innerHTML = data.recommendations.map(item => {
+      grid.innerHTML = data.recommendations.map((item, idx) => {
         const matchPct = Math.min(99, Math.round(item.final_score * 85));
+        const visual = getTopicVisual(item.topic, item.item_type);
+        const delayMs = idx * 80;
+
         return `
-          <div class="glass card-hover rounded-2xl p-5 flex flex-col justify-between space-y-4">
+          <div style="animation-delay: ${delayMs}ms" class="glass card-animate rounded-2xl overflow-hidden flex flex-col justify-between">
             <div>
-              <div class="flex items-center justify-between gap-2 mb-2.5">
-                <span class="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-indigo-500/15 text-indigo-300 border border-indigo-500/25">
-                  ${item.roadmap} • ${item.item_type}
+              <!-- Topic Illustrated Header Banner -->
+              <div class="bg-gradient-to-r ${visual.gradient} px-5 py-3.5 border-b border-slate-800/80 flex items-center justify-between">
+                <div class="space-y-1">
+                  <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-slate-950/60 text-indigo-200 border border-white/10">
+                    ${item.roadmap} • ${item.item_type}
+                  </span>
+                  <div class="flex items-center gap-2 pt-1">
+                    <span class="text-xs px-2.5 py-0.5 rounded-full border ${difficultyBadge(item.difficulty)}">${item.difficulty}</span>
+                    <span class="mono text-xs text-slate-300">⏱ ${item.est_minutes}m</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  ${visual.svg}
+                  ${buildMatchRing(matchPct)}
+                </div>
+              </div>
+
+              <!-- Card Body -->
+              <div class="p-5 space-y-3">
+                <a href="${item.url || '#'}" target="_blank" class="text-base font-bold text-white hover:text-cyan-300 transition leading-snug block">
+                  ${item.title} ↗
+                </a>
+
+                <span class="inline-block text-xs px-2.5 py-0.5 rounded-full bg-slate-800/90 text-slate-300 border border-slate-700/70">
+                  ${item.topic}
                 </span>
-                <span class="mono text-xs font-semibold text-cyan-400">${matchPct}% Match</span>
-              </div>
 
-              <a href="${item.url || '#'}" target="_blank" class="text-base font-bold text-white hover:text-indigo-300 transition leading-snug block">
-                ${item.title} ↗
-              </a>
-
-              <div class="flex flex-wrap items-center gap-2 mt-2.5">
-                <span class="text-xs px-2.5 py-0.5 rounded-full border ${difficultyBadge(item.difficulty)}">${item.difficulty}</span>
-                <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300">${item.topic}</span>
-                <span class="mono text-xs text-slate-400">⏱ ${item.est_minutes}m</span>
-              </div>
-
-              <div class="mt-3 p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300 leading-relaxed">
-                <span class="text-indigo-400 font-semibold">Why:</span> ${item.why_recommended}
+                <div class="p-3 rounded-xl bg-slate-950/65 border border-slate-800/90 text-xs text-slate-300 leading-relaxed">
+                  <span class="text-indigo-400 font-semibold">Why:</span> ${item.why_recommended}
+                </div>
               </div>
             </div>
 
-            <div class="space-y-2.5 pt-2 border-t border-slate-800/80">
+            <!-- Card Footer Controls -->
+            <div class="px-5 pb-5 space-y-2.5">
               <!-- Live Focus Pomodoro Strip -->
-              <div class="flex items-center justify-between bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-1.5">
-                <span class="mono text-xs text-cyan-300" id="timer-display-${item.item_id}">${formatClock(item.est_minutes * 60)}</span>
+              <div class="flex items-center justify-between bg-slate-950/80 border border-slate-800 rounded-xl px-3.5 py-2">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                  <span class="mono text-xs font-semibold text-cyan-300" id="timer-display-${item.item_id}">${formatClock(item.est_minutes * 60)}</span>
+                </div>
                 <button id="timer-btn-${item.item_id}" onclick="toggleTimer(${item.item_id}, ${item.est_minutes})"
-                        class="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-indigo-600/40 text-slate-200 transition">
+                        class="text-[11px] font-semibold px-3 py-1 rounded-lg bg-slate-800 hover:bg-indigo-600/40 text-slate-200 transition active:scale-95">
                   ▶ Start Focus Timer
                 </button>
               </div>
 
               <div class="grid grid-cols-2 gap-2.5">
                 <button onclick="logFeedback(${item.item_id}, 'solved', ${item.est_minutes})"
-                        class="py-2 rounded-xl text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition">
+                        class="py-2.5 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition active:scale-95">
                   ✓ Mark Solved
                 </button>
                 <button onclick="logFeedback(${item.item_id}, 'failed_logic', ${item.est_minutes})"
-                        class="py-2 rounded-xl text-xs font-semibold bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 transition">
+                        class="py-2.5 rounded-xl text-xs font-bold bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 transition active:scale-95">
                   ✕ Log Failed
                 </button>
               </div>
@@ -497,6 +792,15 @@
     }
 
     async function logFeedback(itemId, status, fallbackMinutes) {
+      if (status === 'solved' && typeof confetti === 'function') {
+        confetti({
+          particleCount: 55,
+          spread: 65,
+          origin: { y: 0.7 },
+          colors: ['#6366f1', '#22d3ee', '#34d399', '#c084fc']
+        });
+      }
+
       const userId = document.getElementById('userId').value;
       const actualMinutes = getActualMinutesSpent(itemId, fallbackMinutes);
       await fetch('/api/feedback', {
